@@ -85,45 +85,51 @@ export const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+    <header className="sticky top-0 z-50 bg-[#0d3822] text-white border-b border-[#184a31] shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
           {/* Logo & Brand */}
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-green-600 to-emerald-500 flex items-center justify-center text-white shadow-md shadow-green-600/20">
-              <HeartHandshake className="w-6 h-6" />
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="w-10 h-10 rounded-full bg-[#fdf8ee] flex items-center justify-center border border-emerald-400/40 shadow-sm group-hover:scale-105 transition-transform shrink-0">
+              <svg viewBox="0 0 40 40" className="w-6 h-6 fill-none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 7 C 20 7 24 10 24 14 C 21 14 19 12 20 7 Z" fill="#15803d" />
+                <path d="M19 8 C 19 8 16 11 16 14 C 18.5 14.5 19.5 12 19 8 Z" fill="#22c55e" />
+                <path d="M20 14 C 27 14 31 19 31 25 C 31 31.5 26 35 20 35 C 14 35 9 31.5 9 25 C 9 19 13 14 20 14 Z" fill="#15803d" />
+                <path d="M20 16.5 C 25.5 16.5 28.5 20.5 28.5 25.2 C 28.5 30 24.5 32.8 20 32.8 C 15.5 32.8 11.5 30 11.5 25.2 C 11.5 20.5 14.5 16.5 20 16.5 Z" fill="#fdfbf7" />
+                <path d="M20 22 C 22 19.5 25 21 24.5 23.5 C 24 25.5 20 29 20 29 C 20 29 16 25.5 15.5 23.5 C 15 21 18 19.5 20 22 Z" fill="#f59e0b" />
+              </svg>
             </div>
             <div>
-              <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent">
-                FoodBridge AI
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Redistribution OS
-              </span>
+              <div className="font-black text-xl tracking-tight text-white flex items-center gap-2">
+                Annam
+                <span className="text-[10px] uppercase font-bold tracking-widest text-[#f59e0b] px-2 py-0.5 rounded-full bg-white/10 border border-white/15">
+                  Green Family
+                </span>
+              </div>
             </div>
           </Link>
 
           {/* Center Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 font-medium text-sm text-slate-600">
-            <Link to="/" className="px-3 py-2 rounded-lg hover:text-green-600 hover:bg-slate-50 transition">
+          <nav className="hidden md:flex items-center gap-1 font-semibold text-sm text-emerald-100/90">
+            <Link to="/" className="px-3 py-2 rounded-xl hover:text-white hover:bg-white/10 transition">
               Home
             </Link>
-            <Link to="/impact" className="px-3 py-2 rounded-lg hover:text-green-600 hover:bg-slate-50 transition">
+            <Link to="/impact" className="px-3 py-2 rounded-xl hover:text-white hover:bg-white/10 transition">
               Impact
             </Link>
-            <Link to="/government" className="px-3 py-2 rounded-lg hover:text-green-600 hover:bg-slate-50 transition">
+            <Link to="/government" className="px-3 py-2 rounded-xl hover:text-white hover:bg-white/10 transition">
               Gov Authority
             </Link>
             
             {user && (
-              <Link to={getDashboardLink()} className="px-3 py-2 rounded-lg font-semibold text-green-700 bg-green-50/70 border border-green-200/60 hover:bg-green-100/60 transition">
+              <Link to={getDashboardLink()} className="px-3 py-2 rounded-xl font-bold text-emerald-950 bg-emerald-300 hover:bg-emerald-200 transition">
                 My Dashboard
               </Link>
             )}
 
             {user?.role === 'DONOR' && (
-              <Link to="/donor/donate" className="px-3 py-2 rounded-lg text-emerald-600 hover:bg-emerald-50 transition flex items-center gap-1">
+              <Link to="/donor/donate" className="px-3 py-2 rounded-xl text-[#f59e0b] hover:bg-white/10 transition flex items-center gap-1 font-bold">
                 <Gift className="w-4 h-4" /> Donate Food
               </Link>
             )}
@@ -133,29 +139,29 @@ export const Navbar = () => {
           <div className="flex items-center gap-2 sm:gap-3">
             
             {/* Quick Demo Switcher Menu (College Presentation Ready) */}
-            <div className="hidden lg:flex items-center gap-1 px-2 py-1 bg-slate-100 rounded-lg text-xs font-medium text-slate-600">
-              <span className="text-[11px] text-slate-400 font-semibold px-1">Demo:</span>
+            <div className="hidden lg:flex items-center gap-1 px-2.5 py-1 bg-white/10 border border-white/10 rounded-xl text-xs font-medium text-emerald-100">
+              <span className="text-[10px] text-emerald-300/80 font-bold px-1 uppercase tracking-wider">Demo:</span>
               <button 
                 onClick={async () => { await loginAsDemo('DONOR'); navigate('/donor/dashboard'); }}
-                className={`px-2 py-1 rounded transition ${user?.role === 'DONOR' ? 'bg-green-600 text-white font-bold' : 'hover:bg-slate-200'}`}
+                className={`px-2 py-1 rounded-lg transition text-xs font-bold ${user?.role === 'DONOR' ? 'bg-[#f59e0b] text-[#0a291b]' : 'hover:bg-white/10 text-white'}`}
               >
                 Donor
               </button>
               <button 
                 onClick={async () => { await loginAsDemo('NGO'); navigate('/ngo/dashboard'); }}
-                className={`px-2 py-1 rounded transition ${user?.role === 'NGO' ? 'bg-blue-600 text-white font-bold' : 'hover:bg-slate-200'}`}
+                className={`px-2 py-1 rounded-lg transition text-xs font-bold ${user?.role === 'NGO' ? 'bg-emerald-400 text-[#0a291b]' : 'hover:bg-white/10 text-white'}`}
               >
                 NGO
               </button>
               <button 
                 onClick={async () => { await loginAsDemo('VOLUNTEER'); navigate('/volunteer/dashboard'); }}
-                className={`px-2 py-1 rounded transition ${user?.role === 'VOLUNTEER' ? 'bg-amber-600 text-white font-bold' : 'hover:bg-slate-200'}`}
+                className={`px-2 py-1 rounded-lg transition text-xs font-bold ${user?.role === 'VOLUNTEER' ? 'bg-[#f59e0b] text-[#0a291b]' : 'hover:bg-white/10 text-white'}`}
               >
                 Volunteer
               </button>
               <button 
                 onClick={async () => { await loginAsDemo('ADMIN'); navigate('/admin/dashboard'); }}
-                className={`px-2 py-1 rounded transition ${user?.role === 'ADMIN' ? 'bg-purple-600 text-white font-bold' : 'hover:bg-slate-200'}`}
+                className={`px-2 py-1 rounded-lg transition text-xs font-bold ${user?.role === 'ADMIN' ? 'bg-purple-300 text-purple-950' : 'hover:bg-white/10 text-white'}`}
               >
                 Admin
               </button>

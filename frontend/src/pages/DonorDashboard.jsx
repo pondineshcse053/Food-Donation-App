@@ -54,25 +54,25 @@ export const DonorDashboard = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* Top Welcome Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-emerald-700 via-green-600 to-teal-700 text-white shadow-lg flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div className="p-6 sm:p-8 rounded-[32px] bg-[#0d3822] text-white shadow-xl flex flex-col md:flex-row md:items-center md:justify-between gap-6 border border-[#1b4e33]">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold backdrop-blur-md mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Certified Food Donor Portal
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#f59e0b]" /> Annam Donor Portal
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Welcome, {user?.full_name}
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+            Welcome, {user?.full_name || 'Donor'}
           </h1>
-          <p className="text-emerald-100 text-sm mt-1 max-w-xl">
-            Track and deploy surplus meal redistributions with AI-assisted perishability scoring and automated logistics dispatch.
+          <p className="text-emerald-100/90 text-xs sm:text-sm mt-1 max-w-xl">
+            Green Family surplus food redistribution dashboard. Every leftover plate can become someone's dinner.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-3">
           <Link
             to="/donor/donate"
-            className="px-5 py-3 rounded-2xl font-bold bg-white text-emerald-800 hover:bg-emerald-50 transition shadow-md flex items-center gap-2 text-sm"
+            className="px-6 py-3.5 rounded-full font-black bg-[#f29913] hover:bg-[#d97706] text-[#0a291b] transition shadow-lg shadow-[#f29913]/30 flex items-center gap-2 text-xs sm:text-sm"
           >
-            <Plus className="w-4 h-4 text-emerald-600 font-bold" /> Post New Donation
+            <Plus className="w-4 h-4 stroke-[3]" /> Post New Donation
           </Link>
         </div>
       </div>

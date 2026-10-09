@@ -1,28 +1,154 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { donationService } from '../services/api';
+import { AnnamLogo } from '../components/AnnamLogo';
+import { FoodDetailsModal } from '../components/FoodDetailsModal';
 import { 
   Sparkles, 
   ArrowRight, 
-  HeartHandshake, 
-  BrainCircuit, 
-  MapPin, 
-  ShieldCheck, 
-  Truck, 
+  Search, 
+  Bell, 
   Users, 
-  TrendingUp, 
-  CheckCircle2, 
   Clock, 
+  MapPin, 
+  ChevronRight, 
+  Plus, 
+  CheckCircle2, 
+  Truck, 
+  ShieldCheck, 
+  BrainCircuit, 
+  Award, 
+  HeartHandshake, 
   Soup, 
-  ChevronRight,
-  AlertCircle,
-  Building,
-  Award
+  Building2, 
+  PartyPopper, 
+  Briefcase, 
+  Flame, 
+  Compass,
+  ArrowUpRight
 } from 'lucide-react';
+
+const CATEGORIES = [
+  { id: 'ALL', name: 'All Functions', icon: Compass },
+  { id: 'Wedding', name: 'Wedding', icon: HeartHandshake },
+  { id: 'Birthday', name: 'Birthday', icon: PartyPopper },
+  { id: 'Temple', name: 'Temple', icon: Flame },
+  { id: 'Office', name: 'Office', icon: Briefcase },
+];
 
 export const LandingPage = () => {
   const { user, loginAsDemo } = useAuth();
   const navigate = useNavigate();
+
+  const [activeCategory, setActiveCategory] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDonation, setSelectedDonation] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [donations, setDonations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Default mockup items from the user's screenshot
+  const defaultItems = [
+    {
+      id: 101,
+      donation_code: '4821',
+      food_name: 'Veg biryani and raita',
+      category: 'Wedding',
+      event_type: 'Wedding reception, 0.8 km',
+      pickup_address: 'Hall B, Grand Palace, Anna Salai',
+      number_of_packets: 40,
+      quantity: 20,
+      food_type: 'Cooked Meals',
+      available_until: '10:30 pm',
+      prepared_time: 'Cooked 2 hours ago',
+      distance: '0.8 km away',
+      icon_type: 'bowl',
+      is_veg: true,
+      priority: 'HIGH',
+    },
+    {
+      id: 102,
+      donation_code: '5192',
+      food_name: 'Chapati and kurma',
+      category: 'Birthday',
+      event_type: 'Birthday party, 1.2 km',
+      pickup_address: 'Kalyan Nagar Community Hall',
+      number_of_packets: 25,
+      quantity: 12,
+      food_type: 'Chapati',
+      available_until: '9:45 pm',
+      prepared_time: 'Cooked 1.5 hours ago',
+      distance: '1.2 km away',
+      icon_type: 'leaf',
+      is_veg: true,
+      priority: 'MEDIUM',
+    },
+    {
+      id: 103,
+      donation_code: '6740',
+      food_name: 'Sambar rice & sweet pongal',
+      category: 'Temple',
+      event_type: 'Temple festival, 1.5 km',
+      pickup_address: 'Mylapore Temple Hall',
+      number_of_packets: 60,
+      quantity: 30,
+      food_type: 'Rice',
+      available_until: '11:00 pm',
+      prepared_time: 'Cooked 1 hour ago',
+      distance: '1.5 km away',
+      icon_type: 'bowl',
+      is_veg: true,
+      priority: 'URGENT',
+    },
+    {
+      id: 104,
+      donation_code: '8204',
+      food_name: 'Buffet meals & pasta',
+      category: 'Office',
+      event_type: 'Corporate tech event, 2.1 km',
+      pickup_address: 'Cyber Tech Park, Tidel',
+      number_of_packets: 35,
+      quantity: 18,
+      food_type: 'Cooked Meals',
+      available_until: '10:00 pm',
+      prepared_time: 'Cooked 2.5 hours ago',
+      distance: '2.1 km away',
+      icon_type: 'bowl',
+      is_veg: false,
+      priority: 'MEDIUM',
+    }
+  ];
+
+  useEffect(() => {
+    fetchDonations();
+  }, []);
+
+  const fetchDonations = async () => {
+    try {
+      const res = await donationService.getAll({});
+      if (res.data && res.data.length > 0) {
+        // Map backend donations to mockup schema
+        const mapped = res.data.map(d => ({
+          ...d,
+          category: d.food_description?.includes('Wedding') ? 'Wedding' : 
+                    d.food_description?.includes('Birthday') ? 'Birthday' : 
+                    d.food_description?.includes('Temple') ? 'Temple' : 'Wedding',
+          event_type: d.pickup_address ? `${d.pickup_address.split(',')[0]}, 0.9 km` : 'Function Hall, 0.9 km',
+          distance: '0.8 km away',
+          icon_type: d.food_type === 'Rice' || d.food_type === 'Cooked Meals' ? 'bowl' : 'leaf'
+        }));
+        setDonations([...mapped, ...defaultItems]);
+      } else {
+        setDonations(defaultItems);
+      }
+    } catch (err) {
+      console.warn("Backend not active or empty, showing default Annam items", err);
+      setDonations(defaultItems);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleQuickDemo = async (role) => {
     await loginAsDemo(role);
@@ -32,365 +158,357 @@ export const LandingPage = () => {
     else if (role === 'ADMIN') navigate('/admin/dashboard');
   };
 
+  const handleCardClick = (item) => {
+    setSelectedDonation(item);
+    setIsModalOpen(true);
+  };
+
+  const filteredDonations = donations.filter(item => {
+    const matchesCategory = activeCategory === 'ALL' || item.category === activeCategory;
+    const matchesSearch = !searchQuery || 
+      item.food_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.event_type?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-[#f3f7f0] bg-annam-doodle selection:bg-[#0f3825] selection:text-white pb-24">
       
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 bg-gradient-to-b from-emerald-50/60 via-white to-slate-50 border-b border-slate-200/60">
-        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-green-100/50 to-transparent pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      {/* ========================================================
+          SCREEN 1: WELCOME & SPLASH HERO (From Mockup Screen 1)
+          ======================================================== */}
+      <section className="relative overflow-hidden bg-[#0d3822] bg-annam-doodle-dark text-white pt-12 pb-16 px-4 sm:px-6 lg:px-8 border-b border-[#1b4b32]">
+        
+        {/* Soft Radial Ambient Lights */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-4xl mx-auto text-center relative z-10 space-y-6">
           
-          <div className="text-center max-w-3xl mx-auto">
-            {/* Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100/80 border border-emerald-300 text-emerald-800 text-xs font-semibold uppercase tracking-wider mb-6 shadow-xs">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600 animate-spin" style={{ animationDuration: '4s' }} />
-              Real-World College Capstone Project • Live Prototype
+          {/* Circular Annam Emblem Badge */}
+          <div className="flex justify-center">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-[#fdf8ee] shadow-2xl flex items-center justify-center border-4 border-[#246142] relative overflow-hidden transition-transform duration-300 hover:scale-105">
+              <svg viewBox="0 0 40 40" className="w-16 h-16 fill-none" xmlns="http://www.w3.org/2000/svg">
+                {/* Sprout leaf */}
+                <path d="M20 6 C 20 6 25 10 25 14 C 21 14 19 12 20 6 Z" fill="#15803d" />
+                <path d="M19 7 C 19 7 15 11 15 14 C 18 14.5 19 12 19 7 Z" fill="#22c55e" />
+                {/* Outer bowl / avocado */}
+                <path d="M20 13 C 27.5 13 32 18.5 32 25 C 32 32 26.5 36 20 36 C 13.5 36 8 32 8 25 C 8 18.5 12.5 13 20 13 Z" fill="#15803d" />
+                <path d="M20 15.8 C 26 15.8 29.2 20 29.2 25.2 C 29.2 30.5 25 33.5 20 33.5 C 15 33.5 10.8 30.5 10.8 25.2 C 10.8 20 14 15.8 20 15.8 Z" fill="#fdfbf7" />
+                {/* Golden heart */}
+                <path d="M20 21.5 C 22.5 19 25.5 20.5 25 23.5 C 24.5 26 20 29.5 20 29.5 C 20 29.5 15.5 26 15 23.5 C 14.5 20.5 17.5 19 20 21.5 Z" fill="#f59e0b" />
+              </svg>
             </div>
+          </div>
 
-            {/* Title & Subtitle */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
-              AI-Based Smart <br />
-              <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">
-                Food Donation & Redistribution
-              </span>
+          {/* Typography */}
+          <div className="space-y-1">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
+              Annam
             </h1>
-
-            <p className="mt-6 text-lg sm:text-xl text-slate-600 font-normal leading-relaxed">
-              Reduce Food Waste. Feed the Needy. Build a Better Tomorrow.
+            <p className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#86efac]">
+              GREEN FAMILY
             </p>
-            <p className="mt-2 text-sm text-slate-500 max-w-xl mx-auto">
-              Bridging banquet halls, canteens, and generous donors with certified NGOs and nearby volunteers via intelligent perishability ranking and geospatial routing.
-            </p>
+          </div>
 
-            {/* CTA Buttons */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-              <Link
-                to={user ? "/donor/donate" : "/login"}
-                className="px-6 py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-lg shadow-emerald-600/30 transition transform hover:-translate-y-0.5 flex items-center gap-2 text-sm sm:text-base"
-              >
-                Donate Food <ArrowRight className="w-4 h-4" />
-              </Link>
+          <p className="text-base sm:text-lg text-emerald-100/90 font-medium max-w-md mx-auto leading-relaxed">
+            Every leftover plate can become someone's dinner
+          </p>
 
-              <Link
-                to={user ? "/ngo/dashboard" : "/login"}
-                className="px-6 py-3.5 rounded-xl font-bold text-slate-800 bg-white hover:bg-slate-50 border border-slate-300 shadow-sm transition text-sm sm:text-base flex items-center gap-2"
-              >
-                Find Donations
-              </Link>
+          {/* Action Buttons Matching Screen 1 */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 max-w-sm mx-auto w-full">
+            <Link
+              to={user ? "/donor/donate" : "/login"}
+              className="w-full sm:w-auto flex-1 py-3.5 px-7 rounded-full bg-[#f29913] hover:bg-[#d97706] active:scale-95 text-[#0a291b] font-black text-sm sm:text-base tracking-wide shadow-lg shadow-[#f29913]/30 transition text-center"
+            >
+              Get started
+            </Link>
 
-              {!user && (
-                <Link
-                  to="/login"
-                  className="px-5 py-3.5 rounded-xl font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition text-sm sm:text-base"
-                >
-                  Login
-                </Link>
-              )}
-            </div>
+            <Link
+              to="/login"
+              className="w-full sm:w-auto flex-1 py-3.5 px-7 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 active:scale-95 text-white font-bold text-sm sm:text-base tracking-wide transition text-center"
+            >
+              I already have an account
+            </Link>
+          </div>
 
-            {/* Interactive Demo Instant Logins */}
-            <div className="mt-10 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm max-w-2xl mx-auto">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2.5">
-                ⚡ Interactive College Evaluation Mode • One-Click Login:
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {/* Quick Demo Switcher Bar */}
+          <div className="pt-4 max-w-xl mx-auto">
+            <div className="p-3 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-md">
+              <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider block mb-2">
+                ⚡ Instant College Demo Mode:
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <button
                   onClick={() => handleQuickDemo('DONOR')}
-                  className="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition text-center"
+                  className="py-1.5 px-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold transition"
                 >
-                  🍕 Donor Portal
+                  🍕 Donor
                 </button>
                 <button
                   onClick={() => handleQuickDemo('NGO')}
-                  className="px-3 py-2 rounded-xl text-xs font-bold bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200 transition text-center"
+                  className="py-1.5 px-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold transition"
                 >
-                  🏢 NGO Portal
+                  🏢 NGO
                 </button>
                 <button
                   onClick={() => handleQuickDemo('VOLUNTEER')}
-                  className="px-3 py-2 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 transition text-center"
+                  className="py-1.5 px-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold transition"
                 >
-                  🛵 Volunteer App
+                  🛵 Volunteer
                 </button>
                 <button
                   onClick={() => handleQuickDemo('ADMIN')}
-                  className="px-3 py-2 rounded-xl text-xs font-bold bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200 transition text-center"
+                  className="py-1.5 px-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold transition"
                 >
-                  📊 Admin Panel
+                  📊 Admin
                 </button>
               </div>
             </div>
-
-          </div>
-
-          {/* Visual End-to-End Workflow Diagram */}
-          <div className="mt-16 max-w-5xl mx-auto">
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xl">
-              <div className="text-center mb-6">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                  Automated End-to-End Operational Pipeline
-                </span>
-                <h3 className="text-xl font-extrabold text-slate-900 mt-2">
-                  Food Donor → AI Analysis → NGO Matching → Volunteer → Delivery → Impact
-                </h3>
-              </div>
-
-              {/* Steps Flow Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {[
-                  { step: "01", title: "Food Donor", desc: "Uploads surplus batch & pickup GPS", icon: Soup, color: "text-emerald-600 bg-emerald-50" },
-                  { step: "02", title: "AI Analysis", desc: "Scores perishability & urgency level", icon: BrainCircuit, color: "text-purple-600 bg-purple-50" },
-                  { step: "03", title: "NGO Matching", desc: "Haversine distance & capacity rank", icon: Building, color: "text-blue-600 bg-blue-50" },
-                  { step: "04", title: "Volunteer", desc: "Accepts pickup & departs on route", icon: Truck, color: "text-amber-600 bg-amber-50" },
-                  { step: "05", title: "Delivery", desc: "Live Leaflet GPS route tracking", icon: MapPin, color: "text-rose-600 bg-rose-50" },
-                  { step: "06", title: "Impact", desc: "Meals recorded & metrics aggregated", icon: Award, color: "text-teal-600 bg-teal-50" }
-                ].map((item, idx) => (
-                  <div key={idx} className="relative p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 text-center flex flex-col items-center">
-                    <span className="text-[10px] font-black text-slate-400 mb-1">{item.step}</span>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2.5 ${item.color}`}>
-                      <item.icon className="w-5 h-5" />
-                    </div>
-                    <span className="font-bold text-xs text-slate-800">{item.title}</span>
-                    <span className="text-[11px] text-slate-500 mt-1 leading-snug">{item.desc}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
         </div>
       </section>
 
-      {/* Why Food Donation Matters Section */}
-      <section className="py-16 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mx-auto text-center mb-12">
-            <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Global & Regional Crisis</span>
-            <h2 className="text-3xl font-extrabold text-slate-900 mt-1">Why Food Donation Matters</h2>
-            <p className="text-slate-600 text-sm mt-2">
-              Over 40% of prepared food in banquets and restaurants goes to waste, while thousands suffer malnutrition. Our technology closes this gap immediately.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-emerald-300 transition shadow-xs">
-              <div className="w-12 h-12 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center mb-4">
-                <AlertCircle className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Zero Food Landfill</h3>
-              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                Rotting food in landfills produces methane, a greenhouse gas 28x more potent than carbon dioxide. Rescuing food protects the local biosphere.
-              </p>
+      {/* ========================================================
+          SCREEN 2: HOME FEED (From Mockup Screen 2)
+          ======================================================== */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 space-y-6">
+        
+        {/* Top Header Greeting Bar */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#fdf8ee] border border-[#d5e5cf] flex items-center justify-center shadow-xs">
+              <svg viewBox="0 0 40 40" className="w-6 h-6 fill-none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 7 C 20 7 24 10 24 14 C 21 14 19 12 20 7 Z" fill="#15803d" />
+                <path d="M19 8 C 19 8 16 11 16 14 C 18.5 14.5 19.5 12 19 8 Z" fill="#22c55e" />
+                <path d="M20 14 C 27 14 31 19 31 25 C 31 31.5 26 35 20 35 C 14 35 9 31.5 9 25 C 9 19 13 14 20 14 Z" fill="#15803d" />
+                <path d="M20 16.5 C 25.5 16.5 28.5 20.5 28.5 25.2 C 28.5 30 24.5 32.8 20 32.8 C 15.5 32.8 11.5 30 11.5 25.2 C 11.5 20.5 14.5 16.5 20 16.5 Z" fill="#fdfbf7" />
+                <path d="M20 22 C 22 19.5 25 21 24.5 23.5 C 24 25.5 20 29 20 29 C 20 29 16 25.5 15.5 23.5 C 15 21 18 19.5 20 22 Z" fill="#f59e0b" />
+              </svg>
             </div>
-
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-emerald-300 transition shadow-xs">
-              <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
-                <Users className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Nourishing Vulnerable Families</h3>
-              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                Every packet preserved is safely delivered to orphanages, night shelters, and low-income community kitchens before expiry.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-emerald-300 transition shadow-xs">
-              <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
-                <TrendingUp className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Transparent Accountability</h3>
-              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                Full chain of custody: Donor creates listing, NGO validates demand, Volunteer signs for transit, and NGO signs delivery confirmation.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* AI-Powered Priority & Smart Matching Feature Section */}
-      <section className="py-16 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            
             <div>
-              <span className="text-xs font-bold text-purple-600 uppercase tracking-widest">Decision Support System</span>
-              <h2 className="text-3xl font-extrabold text-slate-900 mt-1">
-                AI Food Priority & Multi-Criteria NGO Matching
-              </h2>
-              <p className="text-slate-600 text-sm mt-3 leading-relaxed">
-                Traditional donation hotlines suffer delays that cause food spoilage. Our engine computes urgency based on temperature, food category, preparation elapsed time, and weather factor.
-              </p>
-
-              <div className="mt-6 space-y-3.5">
-                <div className="flex items-start gap-3">
-                  <div className="p-1 rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900">Perishability Matrix Analysis</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Weights cooked meals, rice, chapati, and fresh vegetables dynamically.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="p-1 rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900">Haversine Distance Scoring</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Prioritizes shelters within 3-5 km radius to prevent transit delays.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="p-1 rounded-full bg-emerald-100 text-emerald-700 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900">Real-Time NGO Capacity Matching</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Ensures receiving centers have refrigerated storage and immediate demand.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <Link
-                  to="/impact"
-                  className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 hover:text-emerald-800"
-                >
-                  Explore System Impact Statistics <ChevronRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-
-            {/* AI Mock Card */}
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-lg">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <BrainCircuit className="w-5 h-5 text-purple-600" />
-                  <span className="font-extrabold text-sm text-slate-900">AI Food Priority Engine</span>
-                </div>
-                <span className="px-2.5 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-700 border border-rose-200">
-                  URGENT PRIORITY
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <div className="text-[11px] font-semibold text-slate-400 uppercase">Donation Batch</div>
-                  <div className="text-sm font-bold text-slate-800">Vegetable Rice & Curry (80 Packets)</div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-slate-50 rounded-xl">
-                    <div className="text-[11px] font-semibold text-slate-400">Prep Elapsed</div>
-                    <div className="text-sm font-bold text-slate-800">3.5 Hours Ago</div>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-xl">
-                    <div className="text-[11px] font-semibold text-slate-400">Remaining Shelf-life</div>
-                    <div className="text-sm font-bold text-rose-600">1.5 Hours Left</div>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl">
-                  <div className="text-xs font-bold text-rose-900">AI Recommendation:</div>
-                  <div className="text-xs text-rose-700 mt-0.5">
-                    "High perishability detected. Immediate volunteer dispatch routed to ABC Community Trust (2.1 km away)."
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* Live Donation Tracking & Leaflet Maps Section */}
-      <section className="py-16 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">Logistics Engine</span>
-          <h2 className="text-3xl font-extrabold text-slate-900 mt-1">Live Donation Tracking & Verification</h2>
-          <p className="text-slate-600 text-sm mt-2 max-w-2xl mx-auto">
-            Interactive OpenStreetMap Leaflet integration allows donors, volunteers, and NGOs to observe live route status with tamper-proof milestone logging.
-          </p>
-
-          <div className="mt-8 p-6 bg-slate-900 text-white rounded-3xl max-w-3xl mx-auto shadow-xl text-left">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
-              <div>
-                <span className="text-xs text-slate-400">Donation ID:</span>
-                <span className="ml-2 font-mono text-sm font-bold text-emerald-400">DON-2026-00125</span>
-              </div>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                ● On The Way
+              <span className="text-xs text-slate-500 font-medium block">Good morning</span>
+              <span className="text-base font-extrabold text-[#0f3825]">
+                {user?.full_name || 'Annam Member'}
               </span>
             </div>
+          </div>
 
-            {/* Stepper */}
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-              <div className="border-l-2 border-emerald-500 pl-3">
-                <div className="text-emerald-400 font-bold">✓ Created</div>
-                <div className="text-slate-400 text-[11px]">11:30 AM</div>
-              </div>
-              <div className="border-l-2 border-emerald-500 pl-3">
-                <div className="text-emerald-400 font-bold">✓ NGO Accepted</div>
-                <div className="text-slate-400 text-[11px]">11:42 AM</div>
-              </div>
-              <div className="border-l-2 border-emerald-500 pl-3">
-                <div className="text-emerald-400 font-bold">✓ Picked Up</div>
-                <div className="text-slate-400 text-[11px]">12:10 PM</div>
-              </div>
-              <div className="border-l-2 border-amber-500 pl-3">
-                <div className="text-amber-400 font-bold">● Transit Route</div>
-                <div className="text-slate-400 text-[11px]">ETA 15 mins</div>
-              </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => {
+                const el = document.getElementById('search-input');
+                if (el) el.focus();
+              }}
+              className="w-10 h-10 rounded-full bg-white border border-[#d6e5d1] text-[#0f3825] flex items-center justify-center shadow-xs hover:bg-[#eaf3e7] transition"
+              title="Search"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={() => navigate('/notifications')}
+              className="w-10 h-10 rounded-full bg-white border border-[#d6e5d1] text-[#0f3825] flex items-center justify-center shadow-xs hover:bg-[#eaf3e7] transition relative"
+              title="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#f29913]" />
+            </button>
+          </div>
+        </div>
+
+        {/* Emerald Hero Banner Card (Screen 2 Hero) */}
+        <div className="p-6 sm:p-7 rounded-[32px] bg-[#0d3822] text-white shadow-lg relative overflow-hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          {/* Decorative Background Doodles */}
+          <div className="absolute right-0 top-0 w-48 h-48 bg-white/5 rounded-full blur-xl pointer-events-none" />
+
+          <div className="space-y-2 relative z-10 max-w-sm">
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight leading-snug">
+              Food left after a function?
+            </h2>
+            <p className="text-xs sm:text-sm text-emerald-200/90 font-medium">
+              Share it with families in need
+            </p>
+            <div className="pt-2">
+              <Link
+                to={user ? "/donor/donate" : "/donor/donate"}
+                className="inline-flex items-center gap-2 py-2.5 px-6 rounded-full bg-[#f29913] hover:bg-[#d97706] text-[#0a291b] font-black text-xs tracking-wider uppercase shadow-md shadow-[#f29913]/30 transition active:scale-95"
+              >
+                Donate now
+              </Link>
+            </div>
+          </div>
+
+          {/* Large Emblem Graphic */}
+          <div className="relative z-10 self-center sm:self-auto shrink-0">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#fdf8ee] border-4 border-white/20 shadow-xl flex items-center justify-center">
+              <svg viewBox="0 0 40 40" className="w-14 h-14 fill-none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 7 C 20 7 24 10 24 14 C 21 14 19 12 20 7 Z" fill="#15803d" />
+                <path d="M19 8 C 19 8 16 11 16 14 C 18.5 14.5 19.5 12 19 8 Z" fill="#22c55e" />
+                <path d="M20 14 C 27 14 31 19 31 25 C 31 31.5 26 35 20 35 C 14 35 9 31.5 9 25 C 9 19 13 14 20 14 Z" fill="#15803d" />
+                <path d="M20 16.5 C 25.5 16.5 28.5 20.5 28.5 25.2 C 28.5 30 24.5 32.8 20 32.8 C 15.5 32.8 11.5 30 11.5 25.2 C 11.5 20.5 14.5 16.5 20 16.5 Z" fill="#fdfbf7" />
+                <path d="M20 22 C 22 19.5 25 21 24.5 23.5 C 24 25.5 20 29 20 29 C 20 29 16 25.5 15.5 23.5 C 15 21 18 19.5 20 22 Z" fill="#f59e0b" />
+              </svg>
             </div>
           </div>
         </div>
+
+        {/* Quick Function Categories (Screen 2 Category Bar) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Filter by Function
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2.5 overflow-x-auto pb-1 no-scrollbar">
+            {CATEGORIES.map(cat => {
+              const Icon = cat.icon;
+              const isSelected = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`px-4 py-2.5 rounded-2xl flex items-center gap-2 shrink-0 border transition-all text-xs font-bold ${
+                    isSelected 
+                      ? 'bg-[#0f3825] text-white border-[#0f3825] shadow-sm' 
+                      : 'bg-white hover:bg-[#eaf3e7] text-[#0f3825] border-[#d6e5d1]'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${isSelected ? 'text-[#f59e0b]' : 'text-[#15803d]'}`} />
+                  <span>{cat.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+          <input
+            id="search-input"
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by food name, wedding hall, or location..."
+            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-[#d6e5d1] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#0f3825] shadow-xs"
+          />
+        </div>
+
+        {/* "Fresh near you" Section (Screen 2 Donation Cards) */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base sm:text-lg font-black text-[#0f3825] tracking-tight">
+              Fresh near you
+            </h3>
+            <button 
+              onClick={() => setActiveCategory('ALL')} 
+              className="text-xs font-bold text-[#15803d] hover:underline flex items-center gap-1"
+            >
+              See all <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {filteredDonations.length === 0 ? (
+            <div className="p-8 text-center bg-white rounded-3xl border border-[#d6e5d1] space-y-2">
+              <Soup className="w-10 h-10 text-slate-400 mx-auto" />
+              <p className="text-sm font-bold text-slate-700">No leftover food listed under this filter</p>
+              <p className="text-xs text-slate-500">Be the first to post a donation from your event!</p>
+              <Link 
+                to="/donor/donate" 
+                className="inline-block mt-2 px-5 py-2 rounded-full bg-[#f29913] text-[#0a291b] font-bold text-xs"
+              >
+                Post Donation
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {filteredDonations.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleCardClick(item)}
+                  className="p-4 rounded-3xl bg-white border border-[#d6e5d1] hover:border-[#0f3825] shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                >
+                  <div className="flex items-center gap-3.5">
+                    {/* Rounded Green Icon Container */}
+                    <div className="w-14 h-14 rounded-2xl bg-[#0d3822] text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                      {item.icon_type === 'bowl' ? (
+                        <svg viewBox="0 0 32 32" className="w-7 h-7 fill-none stroke-emerald-300 stroke-[1.8] stroke-linecap-round stroke-linejoin-round" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M6 15 C6 23 11 27 16 27 C21 27 26 23 26 15 Z" />
+                          <path d="M12 9 C12 7 13 6 13 4" />
+                          <path d="M16 10 C16 8 17 7 17 4" />
+                          <path d="M20 9 C20 7 21 6 21 4" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 32 32" className="w-7 h-7 fill-none stroke-emerald-300 stroke-[1.8] stroke-linecap-round stroke-linejoin-round" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M16 26 V12" />
+                          <path d="M16 14 C16 14 22 14 24 8 C18 8 16 14 16 14 Z" />
+                          <path d="M16 18 C16 18 10 18 8 12 C14 12 16 18 16 18 Z" />
+                        </svg>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-black text-[#0f3825] tracking-tight group-hover:text-emerald-800 transition">
+                        {item.food_name}
+                      </h4>
+                      <p className="text-xs text-slate-500 font-medium line-clamp-1">
+                        {item.event_type}
+                      </p>
+                      
+                      {/* Pill Badges Matching Screenshot */}
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#eaf3e7] text-[#0f3825] text-[10px] font-bold">
+                          {item.number_of_packets ? `${item.number_of_packets} servings` : (item.quantity ? `${Math.round(item.quantity * 2)} servings` : '40 servings')}
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#fef3c7] text-[#b45309] text-[10px] font-bold">
+                          {item.available_until || '10:30 pm'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 p-2 text-slate-300 group-hover:text-[#0f3825] transition">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Live Volunteer Status Quick-Launcher (Direct Link to Screen 5) */}
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-[#0d3822] to-[#154c31] text-white shadow-md flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/20">
+              <Truck className="w-6 h-6 text-[#f59e0b]" />
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-emerald-300 tracking-wider block">Live Volunteer Tracking</span>
+              <h4 className="text-sm font-bold">View Active Delivery #4821</h4>
+              <p className="text-xs text-emerald-100/80">Volunteer en route • ETA 12 min</p>
+            </div>
+          </div>
+
+          <Link
+            to="/track/4821"
+            className="py-2.5 px-4 rounded-xl bg-[#f29913] hover:bg-[#d97706] text-[#0a291b] font-black text-xs shrink-0 shadow-md transition flex items-center gap-1.5"
+          >
+            Track Status <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
       </section>
 
-      {/* Footer / Contact */}
-      <footer className="mt-auto bg-slate-900 text-slate-300 py-12 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-2 text-white font-extrabold text-xl">
-                <HeartHandshake className="w-6 h-6 text-emerald-400" />
-                FoodBridge AI
-              </div>
-              <p className="mt-2 text-xs text-slate-400 max-w-sm leading-relaxed">
-                Smart Food Donation, Tracking & Redistribution System. A complete real-world engineering project addressing hunger and carbon emissions.
-              </p>
-              <div className="mt-4 text-xs text-slate-500">
-                Built with React, FastAPI, SQLAlchemy, SQLite, Leaflet, and Scikit-learn.
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Roles</h4>
-              <ul className="space-y-2 text-xs text-slate-400">
-                <li><Link to="/donor/dashboard" className="hover:text-emerald-400">Donor Portal</Link></li>
-                <li><Link to="/ngo/dashboard" className="hover:text-emerald-400">NGO Verification</Link></li>
-                <li><Link to="/volunteer/dashboard" className="hover:text-emerald-400">Volunteer Logistics</Link></li>
-                <li><Link to="/admin/dashboard" className="hover:text-emerald-400">State Administration</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Civil Authority</h4>
-              <ul className="space-y-2 text-xs text-slate-400">
-                <li><Link to="/government" className="hover:text-emerald-400">Government Support Dashboard</Link></li>
-                <li><Link to="/impact" className="hover:text-emerald-400">Impact Analytics</Link></li>
-                <li><span className="text-slate-500">Emergency Relief Hotline: 1800-FOOD-AID</span></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
-            <div>© 2026 AI-Based Smart Food Donation System. Academic Capstone Prototype.</div>
-            <div className="mt-2 sm:mt-0">All rights reserved.</div>
-          </div>
-        </div>
-      </footer>
+      {/* Interactive Food Details / Claim Modal (Screen 4 from mockup) */}
+      <FoodDetailsModal
+        donation={selectedDonation}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onClaimSuccess={(claimed) => {
+          // claimed callback
+        }}
+      />
 
     </div>
   );

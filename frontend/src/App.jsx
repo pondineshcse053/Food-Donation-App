@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
+import { BottomDock } from './components/BottomDock';
 
 // Pages
 import { LandingPage } from './pages/LandingPage';
@@ -22,7 +23,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500 font-bold text-sm">
+      <div className="min-h-screen flex items-center justify-center bg-[#f3f7f0] text-emerald-900 font-bold text-sm">
         Verifying Security Credentials...
       </div>
     );
@@ -50,7 +51,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-emerald-500 selection:text-white">
+        <div className="min-h-screen flex flex-col bg-[#f3f7f0] text-slate-900 font-sans selection:bg-[#0f3825] selection:text-white pb-20">
           <Navbar />
           <main className="flex-1">
             <Routes>
@@ -114,6 +115,7 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
+          <BottomDock />
         </div>
       </Router>
     </AuthProvider>

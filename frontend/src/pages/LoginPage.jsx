@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { HeartHandshake, LogIn, Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
+import { AnnamLogo } from '../components/AnnamLogo';
+import { Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -54,41 +55,49 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+    <div className="min-h-screen bg-[#f3f7f0] bg-annam-doodle flex items-center justify-center p-4 pb-28">
+      <div className="w-full max-w-md bg-white rounded-[32px] border border-[#d2e2cc] shadow-xl overflow-hidden">
         
         {/* Top Header */}
-        <div className="p-8 text-center bg-gradient-to-b from-emerald-50/80 to-white border-b border-slate-100">
-          <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-green-600 to-emerald-500 items-center justify-center text-white shadow-lg shadow-green-600/30 mb-3">
-            <HeartHandshake className="w-7 h-7" />
+        <div className="p-8 text-center bg-[#0d3822] text-white relative">
+          <div className="flex justify-center mb-3">
+            <div className="w-16 h-16 rounded-full bg-[#fdf8ee] flex items-center justify-center shadow-lg border-2 border-emerald-400/30">
+              <svg viewBox="0 0 40 40" className="w-10 h-10 fill-none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 7 C 20 7 24 10 24 14 C 21 14 19 12 20 7 Z" fill="#15803d" />
+                <path d="M19 8 C 19 8 16 11 16 14 C 18.5 14.5 19.5 12 19 8 Z" fill="#22c55e" />
+                <path d="M20 14 C 27 14 31 19 31 25 C 31 31.5 26 35 20 35 C 14 35 9 31.5 9 25 C 9 19 13 14 20 14 Z" fill="#15803d" />
+                <path d="M20 16.5 C 25.5 16.5 28.5 20.5 28.5 25.2 C 28.5 30 24.5 32.8 20 32.8 C 15.5 32.8 11.5 30 11.5 25.2 C 11.5 20.5 14.5 16.5 20 16.5 Z" fill="#fdfbf7" />
+                <path d="M20 22 C 22 19.5 25 21 24.5 23.5 C 24 25.5 20 29 20 29 C 20 29 16 25.5 15.5 23.5 C 15 21 18 19.5 20 22 Z" fill="#f59e0b" />
+              </svg>
+            </div>
           </div>
-          <h2 className="text-2xl font-extrabold text-slate-900">Welcome Back</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Access your AI Food Redistribution Portal
+          <h2 className="text-2xl font-black tracking-tight text-white">Annam Login</h2>
+          <p className="text-xs text-emerald-200 mt-0.5 uppercase tracking-widest font-semibold">
+            Green Family Surplus Food Portal
           </p>
         </div>
 
         {/* Demo Fast Login Bar */}
-        <div className="p-4 bg-emerald-50/50 border-b border-emerald-100">
-          <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider text-center mb-2">
-            ⚡ Quick Demo Sign-In (College Project Evaluation)
+        <div className="p-4 bg-[#eaf3e7] border-b border-[#d6e5d1]">
+          <div className="text-[11px] font-bold text-[#0f3825] uppercase tracking-wider text-center mb-2">
+            ⚡ Quick Demo Sign-In (Evaluation Mode)
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <button
               type="button"
               onClick={() => handleDemoLogin('DONOR')}
-              className="py-2 px-3 bg-white hover:bg-emerald-50 border border-emerald-200 rounded-xl font-bold text-emerald-800 transition shadow-xs text-left flex items-center justify-between"
+              className="py-2 px-3 bg-white hover:bg-emerald-50 border border-[#cce0c6] rounded-xl font-bold text-[#0f3825] transition shadow-xs text-left flex items-center justify-between"
             >
               <span>🍕 Food Donor</span>
-              <ArrowRight className="w-3.5 h-3.5 text-emerald-600" />
+              <ArrowRight className="w-3.5 h-3.5 text-[#15803d]" />
             </button>
             <button
               type="button"
               onClick={() => handleDemoLogin('NGO')}
-              className="py-2 px-3 bg-white hover:bg-blue-50 border border-blue-200 rounded-xl font-bold text-blue-800 transition shadow-xs text-left flex items-center justify-between"
+              className="py-2 px-3 bg-white hover:bg-emerald-50 border border-[#cce0c6] rounded-xl font-bold text-[#0f3825] transition shadow-xs text-left flex items-center justify-between"
             >
               <span>🏢 NGO Shelter</span>
-              <ArrowRight className="w-3.5 h-3.5 text-blue-600" />
+              <ArrowRight className="w-3.5 h-3.5 text-[#15803d]" />
             </button>
             <button
               type="button"
@@ -110,7 +119,7 @@ export const LoginPage = () => {
         </div>
 
         {/* Standard Form */}
-        <form onSubmit={handleLogin} className="p-8 space-y-4">
+        <form onSubmit={handleLogin} className="p-6 sm:p-8 space-y-4">
           {error && (
             <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -119,35 +128,35 @@ export const LoginPage = () => {
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-[#0f3825] uppercase tracking-wider mb-1.5">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#f3f7f0] border border-[#d6e5d1] rounded-2xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0f3825] focus:bg-white transition"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-[#0f3825] uppercase tracking-wider mb-1.5">
               Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#f3f7f0] border border-[#d6e5d1] rounded-2xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0f3825] focus:bg-white transition"
               />
             </div>
           </div>
@@ -155,19 +164,15 @@ export const LoginPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-md shadow-emerald-600/30 transition text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-3.5 px-6 rounded-full bg-[#f29913] hover:bg-[#d97706] active:scale-[0.98] text-[#0a291b] font-black text-sm tracking-wide shadow-md shadow-[#f29913]/30 transition flex items-center justify-center gap-2 mt-2"
           >
-            {loading ? 'Authenticating...' : (
-              <>
-                <LogIn className="w-4 h-4" /> Sign In
-              </>
-            )}
+            {loading ? 'Authenticating...' : 'Sign In to Annam'}
           </button>
 
           <div className="text-center pt-2">
-            <span className="text-xs text-slate-500">Don't have an account yet? </span>
-            <Link to="/register" className="text-xs font-bold text-emerald-600 hover:underline">
-              Create New Account
+            <span className="text-xs text-slate-500">Don't have an account? </span>
+            <Link to="/register" className="text-xs font-bold text-[#15803d] hover:underline">
+              Create an account
             </Link>
           </div>
         </form>

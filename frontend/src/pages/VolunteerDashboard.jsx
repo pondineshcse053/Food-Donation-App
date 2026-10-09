@@ -89,23 +89,23 @@ export const VolunteerDashboard = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* Top Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white shadow-lg flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div className="p-6 sm:p-8 rounded-[32px] bg-[#0d3822] text-white shadow-xl flex flex-col md:flex-row md:items-center md:justify-between gap-6 border border-[#1b4e33]">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold backdrop-blur-md mb-2">
-            <Truck className="w-3.5 h-3.5" /> Rapid Volunteer Logistics
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-2">
+            <Truck className="w-3.5 h-3.5 text-[#f59e0b]" /> Annam Green Family Logistics
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Volunteer Driver: {user?.full_name}
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+            Volunteer: {user?.full_name || 'Karthik Raja'}
           </h1>
-          <p className="text-amber-100 text-sm mt-1 max-w-xl">
+          <p className="text-emerald-100/90 text-xs sm:text-sm mt-1 max-w-xl">
             Pick up surplus meal containers from banquet halls and deliver directly to partner shelters before expiry.
           </p>
         </div>
 
         <div className="flex items-center gap-2 bg-white/10 px-4 py-2.5 rounded-2xl backdrop-blur-md border border-white/20">
-          <Bike className="w-5 h-5 text-amber-200" />
+          <Bike className="w-5 h-5 text-[#f59e0b]" />
           <div className="text-xs">
-            <span className="text-amber-200 block">Vehicle Status:</span>
+            <span className="text-emerald-200 block">Vehicle Status:</span>
             <span className="font-bold text-white">Active on Road</span>
           </div>
         </div>

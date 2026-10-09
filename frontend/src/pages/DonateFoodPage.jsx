@@ -2,47 +2,43 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { donationService } from '../services/api';
 import { 
-  Gift, 
-  BrainCircuit, 
+  ArrowLeft, 
+  Camera, 
   CheckCircle2, 
+  Sparkles, 
   MapPin, 
   Clock, 
-  Calendar, 
-  Layers, 
-  Scale, 
-  AlertCircle, 
-  Sparkles, 
+  Users, 
   Building2, 
+  ShieldCheck, 
+  BrainCircuit,
   ArrowRight,
-  ShieldAlert
+  UploadCloud,
+  Check
 } from 'lucide-react';
 
-const FOOD_TYPES = [
-  "Cooked Meals",
-  "Rice",
-  "Chapati",
-  "Vegetables",
-  "Snacks",
-  "Fruits",
-  "Other"
+const FUNCTION_TYPES = ['Wedding', 'Birthday', 'Temple', 'Office'];
+
+const PRESET_PHOTOS = [
+  { name: 'Biryani Feast', url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80' },
+  { name: 'Roti & Curry', url: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=600&q=80' },
+  { name: 'Rice & Sambar', url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80' },
 ];
 
 export const DonateFoodPage = () => {
   const navigate = useNavigate();
 
+  const [selectedFunction, setSelectedFunction] = useState('Wedding');
+  const [isVegetarian, setIsVegetarian] = useState(true);
+  const [photoUrl, setPhotoUrl] = useState(PRESET_PHOTOS[0].url);
+
   const [formData, setFormData] = useState({
-    food_name: '',
-    food_type: 'Cooked Meals',
-    quantity: 25,
-    number_of_packets: 50,
-    prepared_date: new Date().toISOString().split('T')[0],
-    prepared_time: '12:00 PM',
-    available_until: '06:00 PM',
-    food_description: '',
-    pickup_address: '12 Grand Banquet Hall, Anna Salai, Chennai',
-    latitude: 13.0418,
-    longitude: 80.2341,
-    food_image_url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'
+    food_name: 'Veg biryani and raita',
+    servings: 40,
+    best_before: '11:00 pm',
+    pickup_address: 'Hall B, [Your area]',
+    quantity_kg: 20,
+    prepared_time: '01:30 PM',
   });
 
   const [loading, setLoading] = useState(false);
@@ -51,13 +47,11 @@ export const DonateFoodPage = () => {
   const [recommendedNgos, setRecommendedNgos] = useState([]);
   const [acceptingNgoId, setAcceptingNgoId] = useState(null);
 
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'quantity' || name === 'number_of_packets' || name === 'latitude' || name === 'longitude'
-        ? parseFloat(value) || 0
-        : value
+      [name]: value
     }));
   };
 
@@ -66,24 +60,40 @@ export const DonateFoodPage = () => {
     setError('');
 
     if (!formData.food_name.trim()) {
-      setError('Food name is required.');
-      return;
-    }
-    if (formData.quantity <= 0) {
-      setError('Enter a valid quantity.');
+      setError('Please enter the food name.');
       return;
     }
 
     setLoading(true);
+
+    const payload = {
+      food_name: formData.food_name,
+      food_type: isVegetarian ? 'Cooked Meals (Veg)' : 'Cooked Meals (Non-Veg)',
+      quantity: parseFloat(formData.quantity_kg) || Math.round(Number(formData.servings) / 2) || 15,
+      number_of_packets: parseInt(formData.servings) || 40,
+      prepared_date: new Date().toISOString().split('T')[0],
+      prepared_time: formData.prepared_time || '12:00 PM',
+      available_until: formData.best_before || '11:00 pm',
+      food_description: `Type of function: ${selectedFunction}. ${isVegetarian ? 'Pure Vegetarian.' : ''} Kept covered and fresh.`,
+      pickup_address: formData.pickup_address,
+      latitude: 13.0827,
+      longitude: 80.2707,
+      food_image_url: photoUrl
+    };
+
     try {
-      const res = await donationService.create(formData);
+      const res = await donationService.create(payload);
       setCreatedDonation(res.data);
 
-      // Fetch AI Recommended NGOs for this newly created donation
-      const recRes = await donationService.getRecommendedNgos(res.data.id);
-      setRecommendedNgos(recRes.data);
+      // AI NGO recommendations
+      try {
+        const recRes = await donationService.getRecommendedNgos(res.data.id);
+        setRecommendedNgos(recRes.data);
+      } catch (recErr) {
+        console.warn("Could not load recommendations:", recErr);
+      }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create food donation. Please review the inputs.');
+      setError(err.response?.data?.detail || 'Failed to post donation. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -96,410 +106,270 @@ export const DonateFoodPage = () => {
       await donationService.updateStatus(createdDonation.id, {
         status: 'NGO_ACCEPTED',
         ngo_id: ngoId,
-        notes: 'Assigned directly from donor recommendation matching.'
+        notes: 'Assigned directly from Annam AI matching recommendation.'
       });
       navigate(`/track/${createdDonation.donation_code}`);
     } catch (err) {
       console.error(err);
-      setError('Failed to assign NGO.');
+      setError('Failed to assign shelter.');
     } finally {
       setAcceptingNgoId(null);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-[#f3f7f0] bg-annam-doodle selection:bg-[#0f3825] selection:text-white py-4 sm:py-8 px-4 flex justify-center pb-28">
       
-      {/* Title */}
-      <div className="mb-8">
-        <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Surplus Recovery</span>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">Donate Surplus Food</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Submit details of unserved, hygienically packed food. Our AI engine instantly computes perishability and recommends the closest shelters.
-        </p>
-      </div>
-
-      {/* Success View with AI Analysis & Recommended NGOs */}
-      {createdDonation ? (
-        <div className="space-y-6">
-          
-          {/* Success Banner */}
-          <div className="p-6 rounded-3xl bg-emerald-600 text-white shadow-lg flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <span className="text-xs uppercase font-extrabold tracking-wider text-emerald-100">
-                  Submission Confirmed
-                </span>
-                <h2 className="text-xl font-black">Food Donation Successfully Created</h2>
-                <div className="text-sm text-emerald-100 mt-0.5">
-                  Generated Donation ID: <span className="font-mono font-bold text-white bg-white/20 px-2 py-0.5 rounded">{createdDonation.donation_code}</span>
-                </div>
-              </div>
-            </div>
-
-            <Link
-              to={`/track/${createdDonation.donation_code}`}
-              className="px-5 py-2.5 rounded-xl font-bold bg-white text-emerald-800 hover:bg-emerald-50 transition shadow-sm text-xs sm:text-sm flex items-center gap-1.5"
-            >
-              Open Live Tracking <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          {/* AI Food Priority Analysis Card (Section 7) */}
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-md">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
-                  <BrainCircuit className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-900 text-base">AI Food Priority Analysis</h3>
-                  <p className="text-[11px] text-slate-400">Automated shelf-life decay & logistical triage</p>
-                </div>
-              </div>
-
-              <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
-                createdDonation.priority === 'URGENT' ? 'bg-rose-100 text-rose-700 border border-rose-200' :
-                createdDonation.priority === 'HIGH' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
-                createdDonation.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
-                'bg-slate-100 text-slate-700'
-              }`}>
-                Priority: {createdDonation.priority}
-              </span>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-slate-50 rounded-2xl">
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reasoning</div>
-                <div className="text-sm font-semibold text-slate-800 mt-1">
-                  "{createdDonation.priority_reason}"
-                </div>
-              </div>
-
-              <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl">
-                <div className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Recommendation</div>
-                <div className="text-sm font-semibold text-emerald-900 mt-1">
-                  "{createdDonation.priority_recommendation}"
-                </div>
-              </div>
-            </div>
-
-            {/* Mandatory Disclaimer */}
-            <div className="mt-4 p-3 bg-amber-50/70 border border-amber-200/60 rounded-xl flex items-center gap-2 text-xs text-amber-800">
-              <ShieldAlert className="w-4 h-4 shrink-0 text-amber-600" />
-              <span><strong>IMPORTANT:</strong> This is an AI decision-support feature, not a guarantee of food safety. Organoleptic checks required at pickup.</span>
-            </div>
-          </div>
-
-          {/* Smart NGO Matching (Section 8) */}
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-md">
-            <div className="mb-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-extrabold text-slate-900 text-base">Smart NGO Matching Engine</h3>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Ranked using composite score: Distance Score + Food Requirement Score + Capacity Score + Urgency Score
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {recommendedNgos.map((ngo, idx) => (
-                <div
-                  key={ngo.ngo_id}
-                  className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-emerald-300 transition flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-sm text-slate-900">{ngo.ngo_name}</span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        Match Score: {ngo.total_match_score}%
-                      </span>
-                    </div>
-
-                    <div className="text-xs text-slate-600 flex flex-wrap gap-x-3 gap-y-1">
-                      <span><strong>Distance:</strong> {ngo.distance_km} km</span>
-                      <span>•</span>
-                      <span><strong>Capacity:</strong> {ngo.capacity} packets</span>
-                      <span>•</span>
-                      <span className="text-emerald-700 font-medium">{ngo.compatibility_reason}</span>
-                    </div>
-
-                    <div className="text-[11px] text-slate-400">
-                      {ngo.address} • Contact: {ngo.contact_person} ({ngo.phone})
-                    </div>
-                  </div>
-
-                  <div className="shrink-0 flex items-center gap-2">
-                    <button
-                      onClick={() => handleNgoAcceptDirectly(ngo.ngo_id)}
-                      disabled={acceptingNgoId === ngo.ngo_id}
-                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition disabled:opacity-50"
-                    >
-                      {acceptingNgoId === ngo.ngo_id ? 'Assigning...' : 'Assign to this NGO'}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <Link
-                to="/donor/dashboard"
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition"
-              >
-                Back to Dashboard
-              </Link>
-            </div>
-          </div>
-
+      <div className="w-full max-w-md bg-[#f3f7f0] rounded-[36px] border border-[#d2e2cc] shadow-xl overflow-hidden flex flex-col">
+        
+        {/* Header (Matching Screen 3: "< Donate leftover food") */}
+        <div className="flex items-center justify-between px-5 py-4 bg-[#f3f7f0] border-b border-[#d8e8d2]">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full bg-white/80 hover:bg-white border border-[#d2e2cc] text-[#0f3825] flex items-center justify-center transition shadow-xs"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-base font-black text-[#0f3825] tracking-tight">
+            Donate leftover food
+          </h1>
+          <div className="w-10 h-10" />
         </div>
-      ) : (
 
-        /* Standard Donation Creation Form */
-        <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-lg space-y-6">
-          
-          {error && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
+        {/* If donation successfully created, show confirmation & AI Match */}
+        {createdDonation ? (
+          <div className="p-5 sm:p-6 space-y-5">
+            {/* Success Card */}
+            <div className="p-6 rounded-3xl bg-[#0d3822] text-white space-y-3 shadow-lg text-center">
+              <div className="w-14 h-14 rounded-full bg-[#fdf8ee] text-[#15803d] mx-auto flex items-center justify-center shadow-md">
+                <Check className="w-8 h-8 stroke-[3]" />
+              </div>
+              <h2 className="text-xl font-black">Donation Posted!</h2>
+              <p className="text-xs text-emerald-200">
+                Pickup code is <strong className="text-base text-[#f59e0b] font-mono font-black">{createdDonation.donation_code}</strong>
+              </p>
+              
+              <div className="p-3 bg-white/10 rounded-2xl text-left space-y-1 text-xs">
+                <div><span className="text-emerald-300">Food:</span> {createdDonation.food_name}</div>
+                <div><span className="text-emerald-300">Servings:</span> {createdDonation.number_of_packets} meals</div>
+                <div><span className="text-emerald-300">AI Urgency:</span> <span className="font-bold text-[#f59e0b]">{createdDonation.priority || 'HIGH'}</span></div>
+              </div>
             </div>
-          )}
 
-          {/* Food Details */}
-          <div className="space-y-4">
-            <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-              1. Food Details & Categorization
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Food Name *
-                </label>
-                <input
-                  type="text"
-                  name="food_name"
-                  required
-                  value={formData.food_name}
-                  onChange={handleChange}
-                  placeholder="e.g. Vegetable Biryani, Meals, Chapati"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
-                />
+            {/* Recommended NGO Shelters */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <BrainCircuit className="w-4 h-4 text-[#15803d]" />
+                <span className="text-xs font-black text-[#0f3825] uppercase tracking-wider">
+                  Nearby Verified Shelters
+                </span>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Food Type *
-                </label>
-                <select
-                  name="food_type"
-                  value={formData.food_type}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
-                >
-                  {FOOD_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
+              {recommendedNgos.length > 0 ? (
+                <div className="space-y-2">
+                  {recommendedNgos.slice(0, 2).map((ngo) => (
+                    <div key={ngo.id} className="p-3.5 rounded-2xl bg-white border border-[#d6e5d1] flex items-center justify-between gap-3 shadow-xs">
+                      <div>
+                        <h4 className="text-xs font-black text-[#0f3825]">{ngo.name}</h4>
+                        <p className="text-[11px] text-slate-500">{ngo.distance_km} km away • {ngo.capacity} capacity</p>
+                      </div>
+                      <button
+                        onClick={() => handleNgoAcceptDirectly(ngo.id)}
+                        disabled={acceptingNgoId === ngo.id}
+                        className="py-2 px-3 rounded-xl bg-[#0f3825] hover:bg-[#144d33] text-white font-bold text-xs shrink-0 transition"
+                      >
+                        {acceptingNgoId === ngo.id ? 'Assigning...' : 'Assign Shelter'}
+                      </button>
+                    </div>
                   ))}
-                </select>
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-white border border-[#d6e5d1] text-xs text-slate-600 text-center">
+                  Listing shared to all certified Green Family shelters nearby.
+                </div>
+              )}
+
+              <button
+                onClick={() => navigate(`/track/${createdDonation.donation_code}`)}
+                className="w-full py-3.5 px-6 rounded-full bg-[#f29913] hover:bg-[#d97706] text-[#0a291b] font-black text-sm shadow-md transition text-center"
+              >
+                Track Live Pickup Status →
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Form matching Screen 3 */
+          <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4">
+            
+            {error && (
+              <div className="p-3 rounded-xl bg-red-50 text-red-700 text-xs font-semibold border border-red-200">
+                {error}
+              </div>
+            )}
+
+            {/* Dotted Photo Upload Box (Screen 3) */}
+            <div className="p-6 rounded-3xl border-2 border-dashed border-[#b8d1b1] bg-[#eaf3e7]/60 hover:bg-[#eaf3e7] transition flex flex-col items-center justify-center text-center cursor-pointer group">
+              <div className="w-12 h-12 rounded-full bg-white text-[#15803d] flex items-center justify-center shadow-xs mb-2 group-hover:scale-105 transition-transform">
+                <Camera className="w-6 h-6 text-[#15803d]" />
+              </div>
+              <span className="text-xs font-extrabold text-[#0f3825]">
+                Add a photo of the food
+              </span>
+              <span className="text-[10px] text-slate-500 mt-0.5">
+                Helps shelters verify freshness instantly
+              </span>
+
+              {/* Photo presets row */}
+              <div className="flex gap-2 mt-3">
+                {PRESET_PHOTOS.map((p, idx) => (
+                  <button
+                    type="button"
+                    key={idx}
+                    onClick={() => setPhotoUrl(p.url)}
+                    className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition ${
+                      photoUrl === p.url ? 'border-[#0f3825] ring-2 ring-[#0f3825]/30' : 'border-white opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Quantity (in kg) *
-                </label>
-                <input
-                  type="number"
-                  name="quantity"
-                  required
-                  min="1"
-                  step="0.5"
-                  value={formData.quantity}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Number of Packets *
-                </label>
-                <input
-                  type="number"
-                  name="number_of_packets"
-                  required
-                  min="1"
-                  value={formData.number_of_packets}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Food Description & Packaging Notes
+            {/* Food Name Input */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#0f3825] uppercase tracking-wider">
+                Food name
               </label>
-              <textarea
-                name="food_description"
-                rows="2"
-                value={formData.food_description}
-                onChange={handleChange}
-                placeholder="Mention storage state (hot, chilled, containerized), dietary notes (100% veg), etc."
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+              <input
+                type="text"
+                name="food_name"
+                value={formData.food_name}
+                onChange={handleInputChange}
+                placeholder="e.g. Veg biryani and raita"
+                required
+                className="w-full px-4 py-3 rounded-2xl bg-white border border-[#d6e5d1] text-xs sm:text-sm font-semibold text-[#0f3825] focus:outline-none focus:ring-2 focus:ring-[#0f3825]"
               />
             </div>
-          </div>
 
-          {/* Time & Usability */}
-          <div className="space-y-4 pt-2">
-            <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-              2. Preparation Timeline & Usability Window
-            </h3>
+            {/* Type of Function Pills (Wedding, Birthday, Temple, Office) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#0f3825] uppercase tracking-wider">
+                Type of function
+              </label>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                {FUNCTION_TYPES.map(type => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setSelectedFunction(type)}
+                    className={`py-2 px-4 rounded-xl text-xs font-black transition-all ${
+                      selectedFunction === type
+                        ? 'bg-[#0f3825] text-white shadow-sm'
+                        : 'bg-white hover:bg-[#eaf3e7] text-[#0f3825] border border-[#d6e5d1]'
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Prepared Date *
+            {/* Two-Column: Servings | Best before */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#0f3825] uppercase tracking-wider">
+                  Servings
                 </label>
                 <input
-                  type="date"
-                  name="prepared_date"
+                  type="number"
+                  name="servings"
+                  min="1"
+                  value={formData.servings}
+                  onChange={handleInputChange}
+                  placeholder="40"
                   required
-                  value={formData.prepared_date}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                  className="w-full px-4 py-3 rounded-2xl bg-white border border-[#d6e5d1] text-xs sm:text-sm font-semibold text-[#0f3825] focus:outline-none focus:ring-2 focus:ring-[#0f3825]"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Prepared Time *
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#0f3825] uppercase tracking-wider">
+                  Best before
                 </label>
                 <input
                   type="text"
-                  name="prepared_time"
+                  name="best_before"
+                  value={formData.best_before}
+                  onChange={handleInputChange}
+                  placeholder="11:00 pm"
                   required
-                  value={formData.prepared_time}
-                  onChange={handleChange}
-                  placeholder="e.g. 11:30 AM"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Available Until *
-                </label>
-                <input
-                  type="text"
-                  name="available_until"
-                  required
-                  value={formData.available_until}
-                  onChange={handleChange}
-                  placeholder="e.g. 05:00 PM"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                  className="w-full px-4 py-3 rounded-2xl bg-white border border-[#d6e5d1] text-xs sm:text-sm font-semibold text-[#0f3825] focus:outline-none focus:ring-2 focus:ring-[#0f3825]"
                 />
               </div>
             </div>
-          </div>
 
-          {/* Pickup Location & Coordinates */}
-          <div className="space-y-4 pt-2">
-            <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-              3. Pickup Location & GPS Coordinates
-            </h3>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Pickup Address *
+            {/* Pickup Address */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#0f3825] uppercase tracking-wider">
+                Pickup address
               </label>
               <input
                 type="text"
                 name="pickup_address"
-                required
                 value={formData.pickup_address}
-                onChange={handleChange}
-                placeholder="Full venue address, gate number, contact at desk"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                onChange={handleInputChange}
+                placeholder="Hall B, [Your area]"
+                required
+                className="w-full px-4 py-3 rounded-2xl bg-white border border-[#d6e5d1] text-xs sm:text-sm font-semibold text-[#0f3825] focus:outline-none focus:ring-2 focus:ring-[#0f3825]"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Vegetarian Switch Toggle */}
+            <div className="p-4 rounded-2xl bg-white border border-[#d6e5d1] flex items-center justify-between gap-3 shadow-xs">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Latitude *
-                </label>
-                <input
-                  type="number"
-                  step="0.0001"
-                  name="latitude"
-                  value={formData.latitude}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
-                />
+                <span className="text-xs font-black text-[#0f3825] block">
+                  Vegetarian
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Food was kept covered and fresh
+                </span>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Longitude *
-                </label>
-                <input
-                  type="number"
-                  step="0.0001"
-                  name="longitude"
-                  value={formData.longitude}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+              <button
+                type="button"
+                onClick={() => setIsVegetarian(!isVegetarian)}
+                className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 ease-in-out relative ${
+                  isVegetarian ? 'bg-[#0f3825]' : 'bg-slate-300'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out ${
+                    isVegetarian ? 'translate-x-5' : 'translate-x-0'
+                  }`}
                 />
-              </div>
+              </button>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Food Image URL
-              </label>
-              <input
-                type="url"
-                name="food_image_url"
-                value={formData.food_image_url}
-                onChange={handleChange}
-                placeholder="https://..."
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
-              />
+            {/* Sticky Action Button: Post donation (Screen 3) */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 px-6 rounded-full bg-[#f29913] hover:bg-[#d97706] active:scale-[0.99] text-[#0a291b] font-black text-sm tracking-wide shadow-lg shadow-[#f29913]/30 transition flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <span>Publishing Donation...</span>
+                ) : (
+                  <span>Post donation</span>
+                )}
+              </button>
             </div>
-          </div>
 
-          {/* Form Actions */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/donor/dashboard')}
-              className="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition text-sm"
-            >
-              Cancel
-            </button>
+          </form>
+        )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-md shadow-emerald-600/30 transition text-sm flex items-center gap-2 disabled:opacity-50"
-            >
-              {loading ? 'Evaluating AI Urgency...' : (
-                <>
-                  <Gift className="w-4 h-4" /> Submit Donation
-                </>
-              )}
-            </button>
-          </div>
-
-        </form>
-      )}
+      </div>
 
     </div>
   );
